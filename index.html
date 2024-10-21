@@ -29,11 +29,42 @@
         // Load the GLB model
         const gltfLoader = new THREE.GLTFLoader();
         const modelUrl = '9mb.glb'; // Change this to your model's path
+        let model;
 
+        // Set up a variable to track where to place the model
+        const modelPosition = new THREE.Vector3();
+
+        // Raycaster for detecting surfaces
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        // Add a click event listener to place the model
+        scene.addEventListener('click', (event) => {
+            // Update the pointer variable with the mouse position
+            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Update the raycaster with the camera and pointer position
+            raycaster.setFromCamera(pointer, camera.object3D);
+
+            // Calculate objects intersecting the picking ray
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                // Place the model at the intersection point
+                const intersection = intersects[0];
+                modelPosition.copy(intersection.point);
+                model.position.copy(modelPosition);
+                model.visible = true; // Make the model visible
+            }
+        });
+
+        // Load the model
         gltfLoader.load(modelUrl, (gltf) => {
-            const model = gltf.scene;
-            model.position.set(0, 0, -2); // Adjust the position
+            model = gltf.scene;
+            model.position.set(0, 0, -2); // Set initial position
             model.scale.set(1, 1, 1); // Adjust the scale if necessary
+            model.visible = false; // Initially hidden until clicked
             scene.appendChild(model);
         }, undefined, (error) => {
             console.error('An error occurred while loading the GLB model:', error);
