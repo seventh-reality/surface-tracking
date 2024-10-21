@@ -67,11 +67,13 @@
       return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     }
 
-    // Handling AR.js for iOS and Android
+    // Make sure that AR.js uses WebRTC-based camera access on iOS (no alerts needed)
+    const sceneEl = document.querySelector('a-scene');
+
+    // Detect iOS and adjust AR.js settings if needed
     if (isIOS()) {
-      alert("Using AR.js for iOS devices via WebRTC.");
-    } else {
-      alert("Using AR.js for Android or non-iOS devices.");
+      // Set AR.js to use WebRTC camera access for iOS
+      sceneEl.setAttribute('arjs', 'sourceType: webcam; trackingMethod: slam;');
     }
 
     // Rotate the model when the button is clicked
