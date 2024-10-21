@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web AR with Three.js and .glb Model</title>
+    <title>Web AR with Surface Tracking and Reticle</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -26,49 +26,68 @@
         camera.setAttribute('look-controls', '');
         scene.appendChild(camera);
 
+        // Create a reticle for surface tracking
+        const reticle = document.createElement('a-entity');
+        reticle.setAttribute('geometry', { primitive: 'ring', radiusInner: 0.05, radiusOuter: 0.07 });
+        reticle.setAttribute('material', { color: '#00FF00' });
+        reticle.setAttribute('position', '0 0 -1');
+        reticle.setAttribute('visible', 'false');  // Initially hidden
+        scene.appendChild(reticle);
+
         // Load the GLB model
         const gltfLoader = new THREE.GLTFLoader();
-        const modelUrl = '9mb.glb'; // Change this to your model's path
+        const modelUrl = '9mb.glb';  // Change this to your model's path
         let model;
 
-        // Set up a variable to track where to place the model
-        const modelPosition = new THREE.Vector3();
-
-        // Raycaster for detecting surfaces
+        // Create a raycaster and pointer for surface detection
         const raycaster = new THREE.Raycaster();
         const pointer = new THREE.Vector2();
 
-        // Add a click event listener to place the model
-        scene.addEventListener('click', (event) => {
-            // Update the pointer variable with the mouse position
-            pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
-            pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-            // Update the raycaster with the camera and pointer position
+        // Function to update reticle position based on surface detection
+        function updateReticle() {
             raycaster.setFromCamera(pointer, camera.object3D);
-
-            // Calculate objects intersecting the picking ray
-            const intersects = raycaster.intersectObjects(scene.children, true);
+            const intersects = raycaster.intersectObject(scene.object3D, true);
 
             if (intersects.length > 0) {
-                // Place the model at the intersection point
-                const intersection = intersects[0];
-                modelPosition.copy(intersection.point);
-                model.position.copy(modelPosition);
-                model.visible = true; // Make the model visible
+                const intersect = intersects[0];
+                reticle.setAttribute('position', intersect.point);
+                reticle.setAttribute('visible', 'true');  // Show the reticle when surface is detected
+            } else {
+                reticle.setAttribute('visible', 'false');  // Hide the reticle when no surface is found
+            }
+        }
+
+        // Event listener to place the model on click
+        scene.addEventListener('click', (event) => {
+            if (reticle.getAttribute('visible') === 'true') {
+                // Place the model at the reticle's position
+                const reticlePosition = reticle.getAttribute('position');
+                model.position.set(reticlePosition.x, reticlePosition.y, reticlePosition.z);
+                model.visible = true;  // Make the model visible
             }
         });
 
-        // Load the model
+        // Load the model and initialize
         gltfLoader.load(modelUrl, (gltf) => {
             model = gltf.scene;
-            model.position.set(0, 0, -2); // Set initial position
-            model.scale.set(1, 1, 1); // Adjust the scale if necessary
-            model.visible = false; // Initially hidden until clicked
+            model.position.set(0, 0, -2);  // Initial position, far from the camera
+            model.scale.set(1, 1, 1);  // Adjust the scale if necessary
+            model.visible = false;  // Initially hidden until placed
             scene.appendChild(model);
         }, undefined, (error) => {
             console.error('An error occurred while loading the GLB model:', error);
         });
+
+        // Animation loop to keep reticle tracking the surface
+        function animate() {
+            pointer.x = 0;  // Use the center of the screen for surface tracking (adjust as needed)
+            pointer.y = 0;
+            updateReticle();  // Call the reticle update function
+            requestAnimationFrame(animate);
+        }
+
+        // Start the animation loop
+        animate();
 
         // Add the scene to the body
         document.body.appendChild(scene);
