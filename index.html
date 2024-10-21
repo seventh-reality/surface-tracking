@@ -10,8 +10,6 @@
     </style>
 </head>
 <body>
-    <script src="https://threejs.org/build/three.min.js"></script>
-    <script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
@@ -21,22 +19,19 @@
             return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         }
 
-        // Create the A-Frame scene
+        // Create the A-Frame scene with AR.js configuration
         const scene = document.createElement('a-scene');
         scene.setAttribute('embedded', '');
         scene.setAttribute('arjs', 'sourceType: webcam; trackingMethod: best;');
 
-        // Create a camera and adjust the FOV based on the device type
+        // Create a camera with adjustable FOV based on the device
         const camera = document.createElement('a-camera');
         camera.setAttribute('look-controls', '');
-
-        // Set the FOV (Field of View) - a wider FOV for mobile, narrower for desktop
         const fov = isMobile() ? 75 : 60;  // Wider FOV for mobile devices
-        camera.setAttribute('fov', fov);  // Set camera FOV
-
+        camera.setAttribute('fov', fov);
         scene.appendChild(camera);
 
-        // Create a reticle for surface tracking
+        // Create a reticle for surface tracking (visible when surface is detected)
         const reticle = document.createElement('a-entity');
         reticle.setAttribute('geometry', { primitive: 'ring', radiusInner: 0.05, radiusOuter: 0.07 });
         reticle.setAttribute('material', { color: '#00FF00' });
@@ -44,30 +39,39 @@
         reticle.setAttribute('visible', 'false');  // Initially hidden
         scene.appendChild(reticle);
 
-        // Load the GLB model
-        const gltfLoader = new THREE.GLTFLoader();
-        const modelUrl = '9mb.glb';  // Change this to your model's path
-        let model;
-
-        // Create a raycaster and pointer for surface detection
-        const raycaster = new THREE.Raycaster();
-        const pointer = new THREE.Vector2();
-
-        // Function to update reticle position based on surface detection
-        function updateReticle() {
-            raycaster.setFromCamera(pointer, camera.object3D);
-            const intersects = raycaster.intersectObject(scene.object3D, true);
-
-            if (intersects.length > 0) {
-                const intersect = intersects[0];
-                reticle.setAttribute('position', intersect.point);
-                reticle.setAttribute('visible', 'true');  // Show the reticle when surface is detected
-            } else {
-                reticle.setAttribute('visible', 'false');  // Hide the reticle when no surface is found
+        // Use AR.js hit-test to detect surfaces and place reticle
+        scene.setAttribute('arjs-hit-test', {
+            hitTestModel: true,
+            onUpdate: function(evt) {
+                const intersection = evt.detail.intersection;
+                if (intersection) {
+                    // Update reticle position and make it visible
+                    const { x, y, z } = intersection.point;
+                    reticle.setAttribute('position', `${x} ${y} ${z}`);
+                    reticle.setAttribute('visible', 'true');
+                } else {
+                    // Hide reticle if no surface is detected
+                    reticle.setAttribute('visible', 'false');
+                }
             }
-        }
+        });
 
-        // Event listener to place the model on click
+        // Load the GLB model
+        let model;
+        const modelUrl = '9mb.glb';  // Change this to your model's path
+
+        const gltfLoader = new THREE.GLTFLoader();
+        gltfLoader.load(modelUrl, (gltf) => {
+            model = gltf.scene;
+            model.position.set(0, 0, -2);  // Initial position, far from the camera
+            model.scale.set(1, 1, 1);  // Adjust the scale if necessary
+            model.visible = false;  // Hidden until placed
+            scene.appendChild(model);
+        }, undefined, (error) => {
+            console.error('An error occurred while loading the GLB model:', error);
+        });
+
+        // Event listener to place the model at the reticle's position
         scene.addEventListener('click', (event) => {
             if (reticle.getAttribute('visible') === 'true') {
                 // Place the model at the reticle's position
@@ -76,28 +80,6 @@
                 model.visible = true;  // Make the model visible
             }
         });
-
-        // Load the model and initialize
-        gltfLoader.load(modelUrl, (gltf) => {
-            model = gltf.scene;
-            model.position.set(0, 0, -2);  // Initial position, far from the camera
-            model.scale.set(1, 1, 1);  // Adjust the scale if necessary
-            model.visible = false;  // Initially hidden until placed
-            scene.appendChild(model);
-        }, undefined, (error) => {
-            console.error('An error occurred while loading the GLB model:', error);
-        });
-
-        // Animation loop to keep reticle tracking the surface
-        function animate() {
-            pointer.x = 0;  // Use the center of the screen for surface tracking (adjust as needed)
-            pointer.y = 0;
-            updateReticle();  // Call the reticle update function
-            requestAnimationFrame(animate);
-        }
-
-        // Start the animation loop
-        animate();
 
         // Add the scene to the body
         document.body.appendChild(scene);
