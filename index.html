@@ -37,7 +37,7 @@
 </head>
 <body>
 
-  <!-- AR Scene -->
+  <!-- AR Scene with SLAM -->
   <a-scene embedded arjs="sourceType: webcam; trackingMethod: slam; debugUIEnabled: false;">
     <!-- 3D Model Entity -->
     <a-entity id="model" gltf-model="#modelAsset" position="0 0 -5" scale="0.5 0.5 0.5" rotation="0 0 0"></a-entity>
@@ -62,20 +62,6 @@
   <button id="scale-btn">Scale Model</button>
 
   <script>
-    // Cross-platform compatibility (iOS & Android)
-    function isIOS() {
-      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-    }
-
-    // Make sure that AR.js uses WebRTC-based camera access on iOS (no alerts needed)
-    const sceneEl = document.querySelector('a-scene');
-
-    // Detect iOS and adjust AR.js settings if needed
-    if (isIOS()) {
-      // Set AR.js to use WebRTC camera access for iOS
-      sceneEl.setAttribute('arjs', 'sourceType: webcam; trackingMethod: slam;');
-    }
-
     // Rotate the model when the button is clicked
     const rotateButton = document.getElementById('rotate-btn');
     const model = document.getElementById('model');
@@ -98,7 +84,6 @@
     // Surface tracking - move model to surface hit position (SLAM hit test)
     document.querySelector('a-scene').addEventListener('ar-hit-test-select', function (event) {
       const hit = event.detail.intersectedEl;
-      const model = document.querySelector('[gltf-model]');
       
       // Set model position to where the surface hit occurs
       if (hit) {
