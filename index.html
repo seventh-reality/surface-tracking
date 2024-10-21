@@ -4,12 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AR.js with SLAM for iOS & Android</title>
-  
-  <!-- Include AR.js for WebAR -->
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://unpkg.com/ar.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
-  <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/build/three.min.js"></script>
+
+  <!-- Include Three.js and GLTFLoader -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.rawgit.com/mrdoob/three.js/r128/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://unpkg.com/ar.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
 
   <style>
     body, html {
@@ -40,10 +39,10 @@
 <body>
 
   <a-scene embedded arjs="sourceType: webcam; trackingMethod: slam; debugUIEnabled: false;">
-    <a-entity id="model" gltf-model="#modelAsset" position="0 0 -5" scale="0.5 0.5 0.5" rotation="0 0 0"></a-entity>
     <a-assets>
       <a-asset-item id="modelAsset" src="9mb.glb"></a-asset-item>
     </a-assets>
+    <a-entity id="model" gltf-model="#modelAsset" position="0 0 -5" scale="0.5 0.5 0.5" rotation="0 0 0"></a-entity>
 
     <!-- Lighting -->
     <a-light type="ambient" intensity="0.8"></a-light>
