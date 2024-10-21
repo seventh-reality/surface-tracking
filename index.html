@@ -16,7 +16,7 @@
       width: 100%;
       height: 100%;
     }
-    #rotate-btn, #scale-btn {
+    #rotate-btn, #scale-btn, #ar-viewer-btn {
       position: fixed;
       bottom: 20px;
       left: 50%;
@@ -33,11 +33,14 @@
     #scale-btn {
       left: 60%;
     }
+    #ar-viewer-btn {
+      left: 20%;
+    }
   </style>
 </head>
 <body>
 
-  <a-scene embedded arjs="sourceType: webcam; trackingMethod: slam; debugUIEnabled: false;">
+  <a-scene id="ar-scene" embedded arjs="sourceType: webcam; trackingMethod: slam; debugUIEnabled: false;">
     <a-assets>
       <a-asset-item id="modelAsset" src="9mb.glb"></a-asset-item>
     </a-assets>
@@ -51,14 +54,16 @@
     <a-entity camera></a-entity>
   </a-scene>
 
-  <!-- Rotate and Scale Buttons -->
+  <!-- Rotate, Scale, and AR Viewer Buttons -->
   <button id="rotate-btn">Rotate Model</button>
   <button id="scale-btn">Scale Model</button>
+  <button id="ar-viewer-btn">Enter AR</button>
 
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const rotateButton = document.getElementById('rotate-btn');
       const scaleButton = document.getElementById('scale-btn');
+      const arViewerButton = document.getElementById('ar-viewer-btn');
       const model = document.getElementById('model');
       let currentRotation = 0;
       let currentScale = 0.5;
@@ -83,6 +88,19 @@
         if (hit) {
           const { x, y, z } = hit.getAttribute('position');
           model.setAttribute('position', { x, y, z });
+        }
+      });
+
+      // AR Viewer Button Functionality
+      arViewerButton.addEventListener('click', function () {
+        const scene = document.getElementById('ar-scene');
+        // Toggle the AR scene's visibility
+        if (scene.hasAttribute('arjs')) {
+          scene.removeAttribute('arjs'); // Stop AR session
+          arViewerButton.innerText = 'Enter AR'; // Update button text
+        } else {
+          scene.setAttribute('arjs', 'sourceType: webcam; trackingMethod: slam; debugUIEnabled: false'); // Start AR session
+          arViewerButton.innerText = 'Exit AR'; // Update button text
         }
       });
     });
