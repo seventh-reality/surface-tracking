@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web AR with Surface Tracking and Reticle</title>
+    <title>Web AR with Surface Tracking and Mobile-Friendly FOV</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -16,14 +16,24 @@
     <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
     <script>
+        // Detect if the user is on a mobile device
+        function isMobile() {
+            return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        }
+
         // Create the A-Frame scene
         const scene = document.createElement('a-scene');
         scene.setAttribute('embedded', '');
         scene.setAttribute('arjs', 'sourceType: webcam; trackingMethod: best;');
 
-        // Create a camera
+        // Create a camera and adjust the FOV based on the device type
         const camera = document.createElement('a-camera');
         camera.setAttribute('look-controls', '');
+
+        // Set the FOV (Field of View) - a wider FOV for mobile, narrower for desktop
+        const fov = isMobile() ? 75 : 60;  // Wider FOV for mobile devices
+        camera.setAttribute('fov', fov);  // Set camera FOV
+
         scene.appendChild(camera);
 
         // Create a reticle for surface tracking
