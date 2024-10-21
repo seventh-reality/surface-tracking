@@ -1,110 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR.js with SLAM for iOS & Android</title>
-
-  <!-- Include A-Frame and AR.js for WebAR -->
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://unpkg.com/ar.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
-
-  <style>
-    body, html {
-      margin: 0;
-      overflow: hidden;
-      width: 100%;
-      height: 100%;
-    }
-    #rotate-btn, #scale-btn, #ar-viewer-btn {
-      position: fixed;
-      bottom: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px 20px;
-      background-color: #000;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 5px;
-    }
-    #scale-btn {
-      left: 60%;
-    }
-    #ar-viewer-btn {
-      left: 20%;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web AR with Three.js and .glb Model</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
 </head>
 <body>
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script src="https://threejs.org/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
-  <a-scene id="ar-scene" embedded arjs="sourceType: webcam; trackingMethod: slam; debugUIEnabled: false;">
-    <a-assets>
-      <a-asset-item id="modelAsset" src="9mb.glb"></a-asset-item>
-    </a-assets>
-    <a-entity id="model" gltf-model="#modelAsset" position="0 0 -5" scale="0.5 0.5 0.5" rotation="0 0 0"></a-entity>
+    <script>
+        // Create the A-Frame scene
+        const scene = document.createElement('a-scene');
+        scene.setAttribute('embedded', '');
+        scene.setAttribute('arjs', 'sourceType: webcam; trackingMethod: best;');
 
-    <!-- Lighting -->
-    <a-light type="ambient" intensity="0.8"></a-light>
-    <a-light type="directional" intensity="0.5" position="1 1 0"></a-light>
+        // Create a camera
+        const camera = document.createElement('a-camera');
+        camera.setAttribute('look-controls', '');
+        scene.appendChild(camera);
 
-    <!-- AR Camera -->
-    <a-entity camera></a-entity>
-  </a-scene>
+        // Load the GLB model
+        const gltfLoader = new THREE.GLTFLoader();
+        const modelUrl = '9mb.glb'; // Change this to your model's path
 
-  <!-- Rotate, Scale, and AR Viewer Buttons -->
-  <button id="rotate-btn">Rotate Model</button>
-  <button id="scale-btn">Scale Model</button>
-  <button id="ar-viewer-btn">Enter AR</button>
+        gltfLoader.load(modelUrl, (gltf) => {
+            const model = gltf.scene;
+            model.position.set(0, 0, -2); // Adjust the position
+            model.scale.set(1, 1, 1); // Adjust the scale if necessary
+            scene.appendChild(model);
+        }, undefined, (error) => {
+            console.error('An error occurred while loading the GLB model:', error);
+        });
 
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const rotateButton = document.getElementById('rotate-btn');
-      const scaleButton = document.getElementById('scale-btn');
-      const arViewerButton = document.getElementById('ar-viewer-btn');
-      const model = document.getElementById('model');
-      let currentRotation = 0;
-      let currentScale = 0.5;
-
-      // Rotate the model when the button is clicked
-      rotateButton.addEventListener('click', function () {
-        currentRotation += 45;  // Rotate by 45 degrees on each click
-        model.setAttribute('rotation', `0 ${currentRotation} 0`);
-      });
-
-      // Scale the model when the scale button is clicked
-      scaleButton.addEventListener('click', function () {
-        currentScale += 0.1;  // Increase scale by 0.1 on each click
-        model.setAttribute('scale', `${currentScale} ${currentScale} ${currentScale}`);
-      });
-
-      // Surface tracking - move model to surface hit position (SLAM hit test)
-      document.querySelector('a-scene').addEventListener('ar-hit-test-select', function (event) {
-        const hit = event.detail.intersectedEl;
-        
-        // Set model position to where the surface hit occurs
-        if (hit) {
-          const { x, y, z } = hit.getAttribute('position');
-          model.setAttribute('position', { x, y, z });
-        }
-      });
-
-      // AR Viewer Button Functionality
-      arViewerButton.addEventListener('click', function () {
-        const scene = document.getElementById('ar-scene');
-        // Toggle the AR scene's visibility
-        if (scene.hasAttribute('arjs')) {
-          scene.removeAttribute('arjs'); // Stop AR session
-          arViewerButton.innerText = 'Enter AR'; // Update button text
-        } else {
-          scene.setAttribute('arjs', 'sourceType: webcam; trackingMethod: slam; debugUIEnabled: false'); // Start AR session
-          arViewerButton.innerText = 'Exit AR'; // Update button text
-        }
-      });
-    });
-  </script>
-
+        // Add the scene to the body
+        document.body.appendChild(scene);
+    </script>
 </body>
 </html>
