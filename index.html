@@ -1,69 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js and OnirixSDK Example</title>
-    <link rel="stylesheet" href="app.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Web AR with SLAM for iOS & Android</title>
+
+  <!-- Include A-Frame and AR.js for WebAR -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://unpkg.com/ar.js@3.3.2/aframe/build/aframe-ar.min.js"></script>
+
+  <style>
+    body, html {
+      margin: 0;
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+    }
+    #rotate-btn, #scale-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background-color: #000;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    #scale-btn {
+      left: 60%;
+    }
+  </style>
 </head>
-
 <body>
-    
-    <audio autoplay>
-        <source src="Background_Music.mp3" type="audio/mpeg">
-        Your browser does not support the audio element.
-    </audio>
-    
-    <audio id="audioPlayer" preload="auto"></audio>
 
-    <div id="transform-controls">
-        <button id="tap-to-place">Place Model</button>
-    </div>
+  <!-- AR Scene -->
+  <a-scene embedded arjs="sourceType: webcam; trackingMethod: slam; debugUIEnabled: false;">
+    <!-- 3D Model Entity -->
+    <a-entity id="model" gltf-model="#modelAsset" position="0 0 -5" scale="0.5 0.5 0.5" rotation="0 0 0"></a-entity>
 
-    <div id="color-controls">
-        <button id="black">Black</button>
-        <button id="blue">Blue</button>
-        <button id="orange">Orange</button>
-        <button id="silver">Silver</button>
-    </div>
+    <!-- Lighting -->
+    <a-light type="ambient" intensity="0.8"></a-light>
+    <a-light type="directional" intensity="0.5" position="1 1 0"></a-light>
 
-    <div class="app-controls">
-        <div id="back-button">
-            <button id="back"><img src="Back.png" style="width:32.6px;height:37.8px;"></button>
-        </div>
+    <!-- AR Camera -->
+    <a-entity camera></a-entity>
+  </a-scene>
 
-        <div id="model-controls">
-            <button id="model1"><img src="what.png" style="width:130px;height:40px; "></button>
-            <button id="model2"><img src="why.png" style="width:130px;height:40px;"></button>
-        </div>
-        <div id="insidebuttons-controls">
-            <button id="ins1"><img src="intro.png" style="width:72px;height:40px;"></button>
-            <button id="ins2"><img src="parts.png" style="width:72px;height:40px;"></button>
-            <button id="ins3"><img src="usage.png" style="width:72px;height:40px;"></button>
-        </div>
+  <!-- GLTF Model Asset -->
+  <a-assets>
+    <a-asset-item id="modelAsset" src="https://cdn.aframe.io/test-models/models/gltf/LeePerrySmith/LeePerrySmith.gltf"></a-asset-item>
+  </a-assets>
 
-        <div id="insidebuttons-controls1">
-            <button id="ins5"><img src="usp2.png" style="width:72px;height:40px;"></button>
-            <button id="ins7"><img src="usp1.png" style="width:72px;height:40px;"></button>
-            <button id="ins4"><img src="usp1.png" style="width:72px;height:40px;"></button>
-            <button id="ins6"><img src="usp3.png" style="width:72px;height:40px;"></button>
+  <!-- Rotate Button -->
+  <button id="rotate-btn">Rotate Model</button>
 
-        </div>
-    </div>
+  <!-- Scale Button -->
+  <button id="scale-btn">Scale Model</button>
 
-    <div id="errorimg">
-        <img id="back"><img src="Game_over_close_button.png" style="width:225px;height:214px;"></img>
-    </div>
+  <script>
+    // Cross-platform compatibility (iOS & Android)
+    function isIOS() {
+      return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    }
 
-    <div id="loading-screen">Loading...</div>
-    <div id="error-screen">
-        <div id="error-title"></div>
-        <div id="error-message"></div>
-    </div>
+    // Handling AR.js for iOS and Android
+    if (isIOS()) {
+      alert("Using AR.js for iOS devices via WebRTC.");
+    } else {
+      alert("Using AR.js for Android or non-iOS devices.");
+    }
 
-    <script type="module" src="app.js"></script>
-    <script type="module" src="a24f0336-9279-4282-90fb-00d86311a827.js"></script>
+    // Rotate the model when the button is clicked
+    const rotateButton = document.getElementById('rotate-btn');
+    const model = document.getElementById('model');
+    let currentRotation = 0;
+
+    rotateButton.addEventListener('click', function () {
+      currentRotation += 45;  // Rotate by 45 degrees on each click
+      model.setAttribute('rotation', `0 ${currentRotation} 0`);
+    });
+
+    // Scale the model when the scale button is clicked
+    const scaleButton = document.getElementById('scale-btn');
+    let currentScale = 0.5;
+
+    scaleButton.addEventListener('click', function () {
+      currentScale += 0.1;  // Increase scale by 0.1 on each click
+      model.setAttribute('scale', `${currentScale} ${currentScale} ${currentScale}`);
+    });
+
+    // Surface tracking - move model to surface hit position (SLAM hit test)
+    document.querySelector('a-scene').addEventListener('ar-hit-test-select', function (event) {
+      const hit = event.detail.intersectedEl;
+      const model = document.querySelector('[gltf-model]');
+      
+      // Set model position to where the surface hit occurs
+      if (hit) {
+        const { x, y, z } = hit.getAttribute('position');
+        model.setAttribute('position', { x, y, z });
+      }
+    });
+  </script>
+
 </body>
-
 </html>
